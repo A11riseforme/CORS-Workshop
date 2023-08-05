@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cors-lab.com</title>
+    <script>
+        function getTime(uri) {
+            fetch('https://api.cors-lab.com:8000'+uri)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById(uri).textContent = data;
+                })
+                .catch(error => {
+                    document.getElementById(uri).textContent = 'Error: ' + error.message;
+                });
+        }
+
+        function getCookieSecret(secret_div_id) {
+            fetch('https://api.cors-lab.com:8000/' + secret_div_id, { credentials: 'include' })
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
+                    } else {
+                        throw new Error('Unauthorized');
+                    }
+                })
+                .then(data => {
+                    if (secret_div_id == "cookie-secret-3") {
+                        document.getElementById(secret_div_id).value = data;
+                    } else {
+                        document.getElementById(secret_div_id).textContent = data;
+                    }
+                })
+                .catch(error => {
+                    if (secret_div_id == "cookie-secret-3") {
+                        document.getElementById(secret_div_id).value = 'Error: ' + error.message;
+                    } else {
+                        document.getElementById(secret_div_id).textContent = 'Error: ' + error.message;
+                    }
+                });
+        }
+
+        function editSecret(secret_input_id) {
+            const secret = document.getElementById(secret_input_id).value;
+            fetch('https://api.cors-lab.com:8000/edit-secret', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: "include",
+                body: JSON.stringify({ secret: secret })
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.text();
+                } else {
+                    throw new Error('Failed to update secret');
+                }
+            })
+            .then(data => {
+                document.getElementById(secret_input_id).value = data;
+            })
+            .catch(error => {
+                document.getElementById(secret_input_id).value = 'Error: ' + error.message;
+            });
+        }
+
+        function getTokenSecret(secret_div_id) {
+            // Retrieve x-auth-token value from local storage
+            const authToken = localStorage.getItem('authToken');
+
+            // Create custom headers with x-auth-token header
+            const headers = new Headers({
+                'x-auth-token': authToken,
+            });
+
+            // Submit AJAX request to /token-secret-1 with custom headers
+            fetch('https://api.cors-lab.com:8000/' + secret_div_id, {
+                method: 'GET',
+                headers: headers,
+            })
+                .then((response) => {
+                    if (response.ok) {
+                        // Handle the response text
+                        return response.text();
+                    } else {
+                        throw new Error('Unauthorized');
+                    }
+                })
+                .then((data) => {
+                    // Do something with the received data
+                    console.log(data);
+                    document.getElementById(secret_div_id).textContent = data;
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    document.getElementById(secret_div_id).textContent = 'Error: ' + error.message;
+                });
+        }
+
+
+        function getCookieAuth() {
+            fetch('https://api.cors-lab.com:8000/cookie-auth', { credentials: 'include' })
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
+                    } else {
+                        throw new Error('Unknown error');
+                    }
+                })
+                .then(data => {
+                    document.getElementById('cookie-auth').textContent = data;
+                })
+                .catch(error => {
+                    document.getElementById('cookie-auth').textContent = 'Error: ' + error.message;
+                });
+        }
+
+        function getTokenAuth() {
+            fetch('https://api.cors-lab.com:8000/token-auth')
+                .then(response => {
+                    if (response.ok) {
+                        // Read the x-auth-token header from the response
+                        const authToken = response.headers.get('x-auth-token');
+
+                        // Store the x-auth-token value in local storage
+                        localStorage.setItem('authToken', authToken);
+
+                        // Do something with the received data
+                        return response.text();
+                    } else {
+                        throw new Error('Unknown error');
+                    }
+                })
+                .then(data => {
+                    document.getElementById('token-auth').textContent = data;
+                })
+                .catch(error => {
+                    document.getElementById('token-auth').textContent = 'Error: ' + error.message;
+                });
+        }
+    </script>
+</head>
+
+<body>
+    <div id="/notime">
+        Please click the button to get the time.
+    </div>
+    <button onclick="getTime('/notime')">Get Time from the misconfigured API</button>
+    <br>
+    <br>
+    <div id="/time">
+        Please click the button to get the time.
+    </div>
+    <button onclick="getTime('/time')">Get Time from the correct API</button>
+    <br>
+    <br>
+    <div id="cookie-auth">
+        Please click the button to get the cookie-authenticated.
+    </div>
+    <button onclick="getCookieAuth()">Get cookie-authenticated.</button>
+    <br>
+    <br>
+    <div id="token-auth">
+        Please click the button to get the cookie-authenticated.
+    </div>
+    <button onclick="getTokenAuth()">Get token-authenticated.</button>
+    <br>
+    <br>
+    <div id="cookie-secret-1">
+        Please click the button to get the cookie-secret.
+    </div>
+    <button onclick="getCookieSecret('cookie-secret-1')">Get cookie-secret in the wrong way 1</button>
+    <br>
+    <br>
+    <div id="cookie-secret-2">
+        Please click the button to get the cookie-secret.
+    </div>
+    <button onclick="getCookieSecret('cookie-secret-2')">Get cookie-secret in the wrong way 2</button>
+    <br>
+    <br>
+    <textarea id="cookie-secret-3" rows="1" cols="50">Please click the button to get the cookie-secret.
+    </textarea>
+    <br>
+    <button onclick="getCookieSecret('cookie-secret-3')">Get cookie-secret in the correct way</button>
+    <button onclick="editSecret('cookie-secret-3')">Edit cookie-secret</button>
+    <br>
+    <br>
+    <div id="token-secret-1">
+        Please click the button to get the token-secret.
+    </div>
+    <button onclick="getTokenSecret('token-secret-1')">Get token-secret in the wrong way</button>
+    <br>
+    <br>
+    <div id="token-secret-2">
+        Please click the button to get the token-secret.
+    </div>
+    <button onclick="getTokenSecret('token-secret-2')">Get token-secret in the correct way</button>
+</body>
+
+</html>
